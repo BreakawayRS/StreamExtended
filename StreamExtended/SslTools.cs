@@ -198,22 +198,25 @@ namespace StreamExtended
             Dictionary<string, SslExtension> extensions = null;
             if (majorVersion > 3 || majorVersion == 3 && minorVersion >= 1)
             {
-                if (await peekStream.EnsureBufferLength(2, cancellationToken))
+                if (peekStream.Available > 0)
                 {
-                    int extensionsLength = peekStream.ReadInt16();
-
-                    if (await peekStream.EnsureBufferLength(extensionsLength, cancellationToken))
+                    if (await peekStream.EnsureBufferLength(2, cancellationToken))
                     {
-                        extensions = new Dictionary<string, SslExtension>();
-                        int idx = 0;
-                        while (extensionsLength > 3)
+                        int extensionsLength = peekStream.ReadInt16();
+
+                        if (await peekStream.EnsureBufferLength(extensionsLength, cancellationToken))
                         {
-                            int id = peekStream.ReadInt16();
-                            int length = peekStream.ReadInt16();
-                            byte[] data = peekStream.ReadBytes(length);
-                            var extension = SslExtensions.GetExtension(id, data, idx++);
-                            extensions[extension.Name] = extension;
-                            extensionsLength -= 4 + length;
+                            extensions = new Dictionary<string, SslExtension>();
+                            int idx = 0;
+                            while (extensionsLength > 3)
+                            {
+                                int id = peekStream.ReadInt16();
+                                int length = peekStream.ReadInt16();
+                                byte[] data = peekStream.ReadBytes(length);
+                                var extension = SslExtensions.GetExtension(id, data, idx++);
+                                extensions[extension.Name] = extension;
+                                extensionsLength -= 4 + length;
+                            }
                         }
                     }
                 }
